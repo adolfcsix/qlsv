@@ -59,12 +59,17 @@ export function renderChatResult(result, index, action) {
         <p>${sources.map(item => esc(sourceNames[item.table] || item.table)).join(' · ')}</p>
     </details>` : '';
 
+    const proposal=result.proposal?`<section class="chat-proposal"><h3>${esc(result.proposal.title)}</h3><dl>${result.proposal.preview.map(p=>`<div><dt>${esc(p.label)}</dt><dd>${esc(p.value)}</dd></div>`).join('')}</dl><p>Hết hạn: ${esc(new Date(result.proposal.expiresAt).toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'}))}</p>${result.proposal.status==='pending'?`<div class="chat-proposal-actions">${action('confirm-action','Xác nhận tác vụ','Xác nhận',`data-proposal="${esc(result.proposal.id)}" data-index="${index}"`)}${action('cancel-action','Hủy tác vụ','Hủy',`data-proposal="${esc(result.proposal.id)}" data-index="${index}"`)}</div>`:`<strong>${esc(({processing:'Đang xử lý…',confirmed:'Đã thực hiện',cancelled:'Đã hủy',superseded:'Đã được thay thế',expired:'Đã hết hạn'})[result.proposal.status]||'Không còn hiệu lực')}</strong>`}</section>`:'';
+    const web=(result.webSources||[]).filter(s=>/^https:\/\//.test(s.url)).map(s=>`<a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.title)}</a>`).join('');
+    const searchFramePrefix="<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline' https:; img-src https: data:\"><base target=\"_blank\">";
+    const searchSuggestions=result.searchSuggestions?`<iframe title="Gợi ý tìm kiếm Google" class="chat-search-suggestions" sandbox="allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer" srcdoc="${esc(searchFramePrefix+result.searchSuggestions.slice(0,30000))}"></iframe>`:'';
     return `<article class="chat-message assistant-message">
         <span class="chat-avatar">${brandMark()}</span>
         <div class="chat-answer">
-            <span class="chat-speaker">Lac Hong · ${result.replyMode === 'llm' ? 'AI diễn giải' : 'Tra cứu dữ liệu'}</span>
+            <span class="chat-speaker">Lac Hong · ${result.replyMode === 'action' ? 'Trợ lý thao tác' : result.replyMode === 'general' ? 'Hỏi đáp kiến thức' : result.replyMode === 'llm' ? 'AI diễn giải' : 'Tra cứu dữ liệu'}</span>
             <p class="chat-reply">${esc(result.reply || result.message)}</p>
             ${result.notice ? `<p class="chat-notice">${esc(result.notice)}</p>` : ''}
+            ${proposal}${web?`<div class="chat-web-sources">Nguồn web: ${web}</div>`:''}${searchSuggestions}
             ${dataset}
             ${references}
             ${evidence}

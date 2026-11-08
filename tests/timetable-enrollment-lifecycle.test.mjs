@@ -1,3 +1,4 @@
+import { weekRange } from '../frontend/src/utils/view-model.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { openDatabase } from '../backend/src/config/database.js';
@@ -174,7 +175,7 @@ test('Giao diện sử dụng API lịch và danh sách học phần riêng, kh�
         students: [], term: { name: 'HK I', year: '2026–2027' } };
     const ctx = { db: demo, user: { role: 'student', profileId: '1' }, filters: { week: 0 }, cart: [],
         remoteSchedule: { state: 'ready', data: { items: [
-            { type: 'study', date: '2026-11-02', start: '07:00', end: '09:00',
+            { type: 'study', date: weekRange().start, start: '07:00', end: '09:00',
                 subject: '<script>alert(1)</script>', room: 'A101' } ] } } };
     const page = schedule(ctx);
     assert.ok(page.includes('&lt;script&gt;'));

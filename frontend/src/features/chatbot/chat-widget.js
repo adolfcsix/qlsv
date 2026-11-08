@@ -91,6 +91,12 @@ function draw({ focus = false, scroll = false } = {}) {
         }
         if (busy)
             return;
+        if(type==='confirm-action'||type==='cancel-action'){
+            busy=true;error='';const token=generation,proposalId=el.dataset.proposal,index=Number(el.dataset.index);const currentProposal=messages[index]?.result?.proposal;if(currentProposal)currentProposal.status='processing';draw();
+            try{const result=await api('/ai/proposals/'+proposalId,{method:'POST',body:{decision:type==='confirm-action'?'confirm':'cancel'}});if(token!==generation)return;const m=messages[index]?.result;if(m?.proposal?.id===proposalId){m.proposal.status=result.status;m.reply=result.status==='confirmed'?'Đã thực hiện sau khi bạn xác nhận.':'Đã hủy, không thay đổi dữ liệu.';}if(result.status==='confirmed')window.dispatchEvent(new Event('lhu-ai-changed'));}
+            catch(e){if(token===generation){if(currentProposal)currentProposal.status='pending';error=e.message;}}finally{if(token===generation){busy=false;draw({scroll:true});}}return;
+        }
+
         if (type === 'suggest') {
             draft = el.dataset.question;
             await send(draft);
@@ -170,6 +176,7 @@ async function send(value, retry = false) {
         const response = isOnline() ? await api('/ai/messages', { method: 'POST', body: { message, ...(conversationId ? { conversationId } : {}) }, signal: controller.signal }) : demoChat(ctx, message, previous);
         if (token !== generation)
             return;
+        if(response.result.replacesPreviousProposal||response.result.proposalReset)for(const old of messages)if(old.result?.proposal?.status==='pending')old.result.proposal.status=response.result.proposalReset?'cancelled':'superseded';
         messages.push({ role: 'assistant', result: response.result });
         if (isOnline()) {
             conversationId = response.conversationId;

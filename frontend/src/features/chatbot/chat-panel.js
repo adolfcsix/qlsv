@@ -11,10 +11,10 @@ export const chatAction = (name, label, content, extra = '') =>
 function suggestions(ctx) {
     const role = ctx.user.role;
     const code = ctx.db.students.find(student => student.id === ctx.user.profileId)?.code || ctx.user.code;
-    if (role === 'student') return ['Xin chào', `Thông tin sinh viên ${code}`, `Bảng điểm ${code}`];
+    if (role === 'student') return ['Giúp tôi đăng ký học phần', `Thông tin sinh viên ${code}`, `Bảng điểm ${code}`];
     if (role === 'lecturer') return ['Sinh viên đang học', 'Xin chào'];
     if (role === 'sysadmin') return ['Khóa K24 có bao nhiêu lớp?', 'Tổng quan hệ thống'];
-    return ['Khóa K24 có bao nhiêu lớp?', 'Lớp CNTT K24A có bao nhiêu sinh viên?', 'Sinh viên tên Nguyen Minh Anh', 'Bảng điểm 20240001'];
+    return ['Thêm khoa mới', 'Thêm khóa tuyển sinh', 'Giúp tôi xếp lịch học', 'Khóa K24 có bao nhiêu lớp?'];
 }
 
 function chatBody({ showHistory, chats, messages, busy, error, failed, ctx }) {
@@ -34,12 +34,12 @@ function chatBody({ showHistory, chats, messages, busy, error, failed, ctx }) {
 
 export function renderChatPanel({ wide, showHistory, chats, messages, busy, error, failed, draft, ctx, verification = null, verifying = false, verifyError = "" }) {
     const info = isOnline() && backendInfo()?.ai === 'ai_missing'
-        ? 'AI chưa có khóa. Mở Terminal tại thư mục dự án, chạy npm run ai:setup, rồi khởi động lại web.'
+        ? 'Chưa kết nối mô hình AI. Tác vụ chỉ được lưu sau khi bạn xác nhận bản xem trước.'
         : !isOnline()
         ? 'Đang thử với dữ liệu mẫu; chưa kết nối mô hình AI.'
         : backendInfo()?.ai === 'ai_tools'
             ? 'Đã thiết lập mô hình AI, nhưng kết nối chỉ được xác nhận khi có phản hồi. Luôn đối chiếu nguồn dữ liệu.'
-            : 'Chưa cấu hình mô hình AI. Chatbot đang tra cứu bằng mẫu câu nội bộ.';
+            : 'Chế độ tra cứu và biểu mẫu theo từ khóa. Tác vụ chỉ được lưu sau khi xác nhận.';
     const mode = !isOnline() ? 'Dữ liệu mẫu' : backendInfo()?.ai === 'ai_missing' ? 'AI chưa cấu hình' : backendInfo()?.ai === 'ai_tools' ? 'Đã cấu hình AI' : 'Tra cứu nội bộ';
     const liveConfigured = isOnline() && backendInfo()?.ai === 'ai_tools';
     const checkSection = liveConfigured

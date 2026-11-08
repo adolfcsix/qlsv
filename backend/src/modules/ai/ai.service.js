@@ -1,3 +1,4 @@
+import { assistantTurn } from './assistant-turn.js';
 import {ensure} from '../../core/errors.js';
 import {id,text} from '../../utils/validation.js';
 import {writeAudit} from '../audit/audit.service.js';
@@ -18,6 +19,7 @@ export async function answer(db, user, body) {
     let context = conv ? JSON.parse(conv.context_json) : {};
     const previous = conv ? await db.all('SELECT role,content_json FROM ai_messages WHERE conversation_id=? ORDER BY message_id DESC LIMIT 8', [conv.conversation_id]) : [];
     const history = previous.reverse().flatMap(row => { const c = JSON.parse(row.content_json); return c.message ? [{ role: 'user', content: c.message }] : c.reply ? [{ role: 'assistant', content: c.reply }] : []; });
+    const assisted=await assistantTurn(db,user,{message,context,conv,task:body.task});if(assisted)return assisted;
     const mustUseAi = process.env.AI_REQUIRE_LIVE === '1';
     ensure(!mustUseAi || process.env.AI_API_KEY, 'Chưa cấu hình mô hình AI thật. Xem docs/HUONG_DAN_TICH_HOP_AI.md.', 503, 'AI_REQUIRED');
     let llm = null;

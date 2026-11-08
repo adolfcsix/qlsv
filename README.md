@@ -1,4 +1,4 @@
-# Lac Hong University — V06.20
+# Lac Hong University — V06.21
 
 Cổng thông tin đại học với nhận diện mới, ưu tiên trải nghiệm sinh viên và giảng viên. Logo SVG gốc lấy ý tưởng chim Lạc vươn lên từ trang sách; xanh đại học, trắng ngà và vàng đồng. Đây là nhận diện thiết kế cho dự án, không sử dụng logo chính thức của một trường.
 
@@ -7,6 +7,8 @@ Cổng thông tin đại học với nhận diện mới, ưu tiên trải nghi�
 **Sinh viên:** khu chào cá nhân, thẻ thông tin, truy cập nhanh, tín chỉ/GPA/công nợ, lịch tuần, tiến độ chương trình, việc cần quan tâm và học phần. **Giảng viên:** lịch dạy, lớp phụ trách, sổ điểm, lớp cố vấn. Các trang nghiệp vụ dùng cùng hệ thống màu, tiêu đề, bảng, nút, menu và trạng thái biểu mẫu.
 
 **Dữ liệu cũ:** dừng ứng dụng, sao lưu thư mục `backend/data` và `.env`, đưa dữ liệu/cấu hình đang dùng sang thư mục bản mới trước khi chạy. Không xóa dữ liệu để đổi nhận diện. Thông tin đăng nhập, API và cơ chế phân quyền được giữ tương thích. Bộ SQL tham chiếu 36 bảng không đổi.
+
+**Mới trong V06.21:** trợ lý thao tác theo vai trò, hỏi thiếu thông tin, xem trước và xác nhận mới lưu; 36 tác vụ được kết nối. Hỏi đáp ngoài hệ thống hỗ trợ mô hình và Google Search khi dùng Gemini. Xem `docs/TRO_LY_THAO_TAC_V06_21.md`. Muốn hiểu câu tự nhiên cần cấu hình API key qua `npm run ai:setup`; không có mô hình chỉ còn tra cứu và biểu mẫu theo từ khóa.
 
 **Mới trong V06.20:** thời khóa biểu có số tiết/khoảng tiết, phút mỗi tiết, phút nghỉ, loại buổi và giảng viên theo từng buổi; cán bộ cấu hình và máy chủ kiểm tra khớp giờ. Có lịch tuần, danh sách chi tiết, lọc lớp và thẻ buổi học trên điện thoại. Dữ liệu cũ chưa khai báo tiết được giữ nguyên, không tự suy số tiết. Xem `docs/THOI_KHOA_BIEU_V06_20.md`.
 

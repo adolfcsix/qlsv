@@ -83,6 +83,9 @@ export async function openDatabase(config = {}) {
             let periodMigration = await readFile(new URL('../../database/migrations/v06-20-session-periods.sql', import.meta.url), 'utf8');
             if(driver==='mysql')periodMigration=periodMigration.replaceAll('INTEGER','INT');
             for(const statement of periodMigration.split(';').map(s=>s.trim()).filter(Boolean)){if(native)native.exec(statement);else await pool.query(statement);}
+            let aiActionMigration=await readFile(new URL('../../database/migrations/v06-21-ai-actions.sql',import.meta.url),'utf8');
+            if(driver==='mysql')aiActionMigration=aiActionMigration.replaceAll('INTEGER','INT');
+            for(const statement of aiActionMigration.split(';').map(s=>s.trim()).filter(Boolean)){if(native)native.exec(statement);else await pool.query(statement);}
             // Versioned extension: idempotent migration, executed for both database drivers.
             // Tables live outside the 36-table academic reference schema.
             let academicMigration = await readFile(new URL('../../database/migrations/v06-11-academic-decisions.sql', import.meta.url), 'utf8');
@@ -123,7 +126,7 @@ export async function openDatabase(config = {}) {
         }
     };
     let tail = Promise.resolve();
-    db.tx = fn => { const work = tail.then(async () => { if (native) {
+    db.tx = fn => { if(context.getStore())return Promise.resolve().then(fn);const work = tail.then(async () => { if (native) return context.run({sqliteTransaction:true},async()=>{
         native.exec('BEGIN IMMEDIATE');
         try {
             const value = await fn();
@@ -134,7 +137,7 @@ export async function openDatabase(config = {}) {
             native.exec('ROLLBACK');
             throw e;
         }
-    } const conn = await pool.getConnection(); try {
+    }); const conn = await pool.getConnection(); try {
         return await context.run(conn, async () => { await conn.beginTransaction(); try {
             await conn.execute('SELECT revision FROM app_lock WHERE lock_id=1 FOR UPDATE');
             const value = await fn();

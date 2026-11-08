@@ -1,6 +1,6 @@
 {
-  "name": "lac-hong-university-v0620",
-  "version": "0.6.20",
+  "name": "lac-hong-university-v0621",
+  "version": "0.6.21",
   "private": true,
   "type": "module",
   "description": "Quản lý đại học - frontend JavaScript ES Modules theo phân hệ, backend Node.js, MySQL/SQLite",

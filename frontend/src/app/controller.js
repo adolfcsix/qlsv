@@ -264,3 +264,5 @@ document.addEventListener('keydown', e => { if (!document.body.classList.contain
 } });
 window.matchMedia('(max-width:760px)').addEventListener('change', e => { if (!e.matches && document.body.classList.contains('menu-open'))
     toggleMenu(false); });
+
+window.addEventListener('lhu-ai-changed',async()=>{remotePages.clear();if(!state.dirtyGrades){await refresh();render();}else toast('Tác vụ AI đã lưu. Hãy hoàn tất điểm đang nhập rồi cập nhật dữ liệu.');});
