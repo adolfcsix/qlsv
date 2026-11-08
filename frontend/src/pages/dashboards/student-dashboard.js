@@ -1,0 +1,13 @@
+import { stat, money, esc, icon, link, card, badge } from '../../components/ui.js';
+import { getContext, summary, balance } from '../../services/repository.js';
+import { visibleClasses } from '../_shared.js';
+import { dashboardFrame } from './shared.js';
+import { portalHero, portalWeek, portalCourses } from './portal.js';
+import { priorityPanel, serviceDirectory, nextSession, registrationWindow } from './student-hub.js';
+export function studentDashboard(ctx) {
+ const {db,user}=ctx,s=db.students.find(s=>s.id===user.profileId);
+ if(!s)return dashboardFrame(ctx,{title:'Tổng quan sinh viên',stats:'',tasks:[]});
+ const c=getContext(db,s),sm=summary(db,s.id),total=Number(c.program?.credits)||0,percent=total?Math.max(0,Math.min(100,Math.round(sm.credits/total*100))):null,due=balance(db,s.id).due;
+ const stats=stat('Tín chỉ đã đạt',sm.credits+' / '+(total||'—'),'Theo kết quả đã công nhận','book')+stat('GPA đã tổng kết',sm.gpa===null?'—':sm.gpa.toFixed(2),'Theo bản duyệt','chart')+stat('Học phí còn thiếu',money(due),'Các phiếu còn hiệu lực','wallet');
+ return `<div class="personal-portal student-portal student-hub">${portalHero(ctx,{title:'Chào '+s.name.split(' ').at(-1)+',',description:'Thông tin học tập, lịch học và các dịch vụ sinh viên.',tag:'STUDENT PORTAL',action:link('Lịch của tôi '+icon('arrow'),'/student/schedule','btn hero-button')})}<div class="portal-identity"><span>${icon('cap')}<strong>${esc(s.name)}</strong></span><span>${esc(s.code)}</span><span>${esc(c.group?.name||'Chưa phân lớp')}</span>${badge(s.status)}</div>${nextSession(ctx)}<div class="stats three portal-stats">${stats}</div><div class="hub-layout"><div class="hub-primary">${serviceDirectory(ctx)}${portalWeek(ctx)}</div><aside class="hub-secondary">${priorityPanel(ctx)}${card('Tiến độ học tập','Tiến độ theo chương trình đã gắn với hồ sơ',`<div class="journey-panel"><div class="journey-number"><strong>${percent===null?'—':percent+'%'}</strong><span>tín chỉ hoàn thành</span></div><div class="journey-track" role="progressbar" aria-label="Tiến độ tín chỉ" ${percent===null?'':`aria-valuenow="${percent}"`} aria-valuemin="0" aria-valuemax="100"><span style="width:${percent||0}%"></span></div><p>${esc(c.program?.name||'Chưa có chương trình học')}</p><small>${total?`${sm.credits} tín chỉ được công nhận / ${total} tín chỉ chương trình`:'Chưa có tổng tín chỉ để tính tiến độ.'}</small>${link('Xem chương trình '+icon('arrow'),'/student/plan','text-link')}</div>`)}${registrationWindow(ctx)}</aside></div>${portalCourses(ctx,{title:'Học phần của tôi',subtitle:'Các lớp đã đăng ký và đang học',path:'/student/schedule'})}</div>`;
+}

@@ -1,0 +1,12 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {seed} from '../frontend/src/demo/data.js';
+import {studentDashboard} from '../frontend/src/pages/dashboards/student-dashboard.js';
+import {lecturerDashboard} from '../frontend/src/pages/dashboards/lecturer-dashboard.js';
+import {portalWeek} from '../frontend/src/pages/dashboards/portal.js';
+import {weekRange} from '../frontend/src/utils/view-model.js';
+const ctx=role=>{const db=seed();return{db,user:db.accounts.find(a=>a.role===role),filters:{},parts:[role,'dashboard']};};
+test('Cổng sinh viên hiển thị dữ liệu cá nhân, tiến độ thật và không biến tên thành HTML',()=>{const c=ctx('student');c.db.students[0].name='Nguyễn <img src=x onerror=alert(1)>';const html=studentDashboard(c);assert.match(html,/STUDENT PORTAL/);assert.match(html,/7 \/ 130/);assert.match(html,/aria-valuenow="5"/);assert.match(html,/&lt;img/);assert.ok(!html.includes('<img src=x'));for(const path of ['registration','results','requests','fees','schedule','plan'])assert.ok(html.includes('/student/'+path));});
+test('Thiếu tổng tín chỉ không tạo phần trăm giả hoặc NaN',()=>{const c=ctx('student');c.db.programs.forEach(p=>p.credits=0);const html=studentDashboard(c);assert.match(html,/Chưa có tổng tín chỉ/);assert.ok(!html.includes('NaN'));assert.ok(!html.includes('aria-valuenow='));});
+test('Giảng viên chỉ đếm điểm chưa công bố trong lớp được giao',()=>{const c=ctx('lecturer');c.db.grades=[{classId:'c1',published:false},{classId:'c2',published:false},{classId:'c1',published:true}];const html=lecturerDashboard(c);assert.match(html,/FACULTY PORTAL/);assert.match(html,/Dòng điểm chưa công bố[\s\S]*?<strong>1<\/strong>/);assert.ok(!html.includes('/student/'));});
+test('Lịch tuần dùng giáo viên theo buổi; buổi bỏ phân công không trở về giảng viên mặc định',()=>{const c=ctx('student'),r=weekRange();c.db.schedules=[{classId:'c1',day:1,start:'08:00',end:'09:00',from:r.start,to:r.end,room:'A101',teacherNames:['Giáo viên buổi <mới>']}];let html=portalWeek(c);assert.match(html,/Giáo viên buổi &lt;mới&gt;/);c.db.schedules[0].teacherNames=[];html=portalWeek(c);assert.match(html,/Chờ phân công/);assert.ok(!html.includes('Nguyễn Văn Hòa'));});
+test('Không có lớp hoặc lịch vẫn có trạng thái rỗng và liên kết tiếp tục',()=>{const c=ctx('student');c.db.enrollments=[];c.db.schedules=[];const html=studentDashboard(c);assert.match(html,/Một tuần chưa có lịch/);assert.match(html,/Chưa có lớp học phần/);assert.ok(!html.includes('undefined'));});

@@ -1,0 +1,17 @@
+import { read, transact, upsert, uid, audit, collect, isOnline } from '../../services/repository.js';
+import * as ui from '../../components/ui.js';
+import * as pages from '../../pages/index.js';
+const { esc, icon, btn, link, field, select, textarea, badge, person, money, date, modal, info, confirm, toast, csv } = ui;
+export function createActions(runtime) {
+    const { context, render, toggleMenu, go, getUser, checkAcademic, options, orgForm, studentForm, requestDetail, accountForm, accountDetail, saveGrades, saved, log, filterMemory, state } = runtime;
+    return {
+        'new-charge': el => { checkAcademic(); modal('Lập khoản thu', `<div class="form-grid">${field('name', 'Nội dung khoản thu *', '', 'text', 'required')}${field('amount', 'Số tiền phải nộp (đồng) *', '', 'number', 'required min="1" step="1"')}${field('due', 'Hạn nộp *', '', 'date', 'required')}</div>`, async (d) => { if (!Number.isSafeInteger(Number(d.amount)) || Number(d.amount) <= 0)
+            throw new Error('Số tiền không hợp lệ.'); await upsert('charges', { ...d, amount: Number(d.amount), studentId: el.dataset.student, id: uid('ch') }); await saved(); }); },
+        collect: el => { checkAcademic(); const ch = read().charges.find(c => c.id === el.dataset.id); modal('Ghi nhận thu học phí', `<p>${esc(ch.name)}</p><div class="form-grid">${field('amount', 'Số tiền thực nhận (đồng) *', '', 'number', 'min="1" step="1" required')}${select('method', 'Phương thức', [['Tiền mặt', 'Tiền mặt'], ['Chuyển khoản', 'Chuyển khoản']])}</div><label class="check-label"><input type="checkbox" required> Tôi đã đối chiếu số tiền và phương thức thu.</label>`, async (d) => { await transact(db => { collect(db, ch.id, Number(d.amount), d.method); audit(db, getUser().name, 'Ghi nhận thu mẫu', ch.name + ' · ' + d.amount); }); await saved(isOnline() ? 'Đã tạo phiếu thu và cập nhật công nợ.' : 'Đã tạo phiếu thu mẫu.'); }); },
+        receipt: el => { const ctx = context(), r = ctx.db.receipts.find(r => r.id === el.dataset.id), ch = ctx.db.charges.find(c => c.id === r.chargeId), s = ctx.db.students.find(s => s.id === ch.studentId); if (ctx.user.role === 'student' && s.id !== ctx.user.profileId)
+            throw new Error('Không đủ quyền.'); info('Phiếu thu · ' + r.code, `<div class="receipt"><p class="eyebrow">LAC HONG UNIVERSITY / PHIẾU THU MINH HỌA</p><h2>${money(r.amount)}</h2>${badge(r.status, r.status === 'active' ? 'Còn hiệu lực' : 'Đã hủy')}${pages.details([['Người nộp', s.name], ['Mã sinh viên', s.code], ['Nội dung', ch.name], ['Ngày thu', date(r.date)], ['Phương thức', r.method], ['Lý do hủy', r.reason || '—']])}<p class="helper muted">Dữ liệu trình diễn. Không có giá trị giao dịch hoặc chứng từ thực tế.</p>${ctx.user.role === 'academic' && r.status === 'active' ? btn('Hủy phiếu có lý do', 'cancel-receipt', 'danger-btn', 'data-id="' + r.id + '"') : ''}</div>`); },
+        'cancel-receipt': el => { checkAcademic(); modal('Hủy phiếu thu', textarea('reason', 'Lý do hủy *', '', 'required'), async (d) => { if (!d.reason.trim())
+            throw new Error('Vui lòng nhập lý do.'); await transact(db => { const r = db.receipts.find(r => r.id === el.dataset.id); if (r.status !== 'active')
+            throw new Error('Phiếu đã hủy.'); r.status = 'cancelled'; r.reason = d.reason; audit(db, getUser().name, 'Hủy phiếu thu', r.code + ' · ' + d.reason); }); await saved('Đã hủy phiếu và cập nhật công nợ.'); }); }
+    };
+}

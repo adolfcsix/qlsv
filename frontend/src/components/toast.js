@@ -1,0 +1,1 @@
+export function toast(message, error = false) { const el = document.querySelector('#toast'); el.textContent = message; el.className = error ? 'show error' : 'show'; clearTimeout(toast.timer); toast.timer = setTimeout(() => el.className = '', 4200); }

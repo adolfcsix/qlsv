@@ -1,0 +1,13 @@
+import { randomBytes, scrypt as scryptCallback, timingSafeEqual, createHash } from 'node:crypto';
+import { promisify } from 'node:util';
+import { AppError, ensure } from '../../core/errors.js';
+const scrypt = promisify(scryptCallback);
+export const hashToken = s => createHash('sha256').update(s).digest('hex');
+export async function hashPassword(password) { const salt = randomBytes(16).toString('hex'); const key = await scrypt(password, salt, 64); return `scrypt:${salt}:${key.toString('hex')}`; }
+export async function verifyPassword(password, hash) { const [method, salt, hex] = String(hash || '').split(':'); if (method !== 'scrypt' || !salt || !hex)
+    return false; const expected = Buffer.from(hex, 'hex'), actual = await scrypt(password, salt, 64); return actual.length === expected.length && timingSafeEqual(actual, expected); }
+export async function login(db, username, password) { ensure(typeof username === 'string' && typeof password === 'string' && password.length <= 256, 'Thông tin đăng nhập không hợp lệ.', 401, 'INVALID_LOGIN'); const row = await db.get('SELECT u.*,r.name AS role FROM users u JOIN roles r ON r.role_id=u.role_id WHERE LOWER(u.username)=LOWER(?) OR LOWER(u.email)=LOWER(?)', [username.trim(), username.trim()]); if (!row || !await verifyPassword(password, row.password_hash))
+    throw new AppError(401, 'INVALID_LOGIN', 'Tên đăng nhập hoặc mật khẩu chưa đúng.'); ensure(row.status === 'active' && !await db.get('SELECT user_id FROM account_archives WHERE user_id=?',[row.user_id]), 'Tài khoản đã bị khóa.', 403, 'ACCOUNT_LOCKED'); const token = randomBytes(32).toString('hex'), csrf = randomBytes(24).toString('hex'); await db.insert('sessions', { token_hash: hashToken(token), user_id: row.user_id, csrf_token: csrf, expires_at: new Date(Date.now() + 8 * 3600000).toISOString() }); return { token, csrf }; }
+export async function authenticate(db, req) { const cookie = String(req.headers.cookie || '').split(';').map(x => x.trim()).find(x => x.startsWith('qlsv_session='))?.slice(13); if (!cookie)
+    return null; const session = await db.get('SELECT s.*,u.status,r.name AS role,u.username,u.email FROM sessions s JOIN users u ON u.user_id=s.user_id JOIN roles r ON r.role_id=u.role_id WHERE s.token_hash=?', [hashToken(cookie)]); if (!session || session.expires_at < new Date().toISOString() || session.status !== 'active' || await db.get('SELECT user_id FROM account_archives WHERE user_id=?',[session.user_id]))
+    return null; const flag = await db.get('SELECT must_change_password FROM user_security WHERE user_id=?', [session.user_id]); session.mustChange = !!flag?.must_change_password; return session; }

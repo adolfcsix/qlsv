@@ -1,0 +1,4 @@
+import { icon } from './icon.js';
+export const card = (title, desc, content, actions = '') => `<section class="card"><div class="card-head"><div><h2>${title}</h2>${desc ? `<p>${desc}</p>` : ''}</div>${actions ? `<div class="card-actions">${actions}</div>` : ''}</div><div class="card-body">${content || '<p class="muted">Chưa có dữ liệu để hiển thị.</p>'}</div></section>`;
+export const stat = (label, value, desc, ico = 'chart') => `<div class="stat"><div class="stat-top"><span>${label}</span><span class="stat-icon">${icon(ico)}</span></div><strong>${value}</strong><small>${desc}</small></div>`;
+export const heading = (eyebrow, title, desc, actions = '') => `<header class="page-head"><div><p class="eyebrow">${eyebrow}</p><h1>${title}</h1><p class="lead">${desc}</p></div><div class="head-actions">${actions}</div></header>`;

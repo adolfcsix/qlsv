@@ -1,0 +1,2 @@
+import { empty } from './empty-state.js';
+export const table = (heads, rows) => rows.length ? `<div class="table-scroll" tabindex="0" aria-label="Bảng dữ liệu"><table><thead><tr>${heads.map(h => `<th scope="col">${h}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${row.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : empty('Không có kết quả', 'Thử đổi bộ lọc hoặc thêm bản ghi mới.');

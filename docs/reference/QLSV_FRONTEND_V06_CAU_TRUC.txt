@@ -1,0 +1,325 @@
+# CẤU TRÚC FRONTEND QLSV V06 — THIẾT KẾ TRIỂN KHAI
+
+> Tài liệu cấu trúc đề xuất sau khi đối chiếu source `QLSV_FULLSTACK_UIUX_V05.zip` ngày 07/11/2026. Đây là thiết kế tổ chức code và màn hình, **chưa phải bản V06 đã code xong**. Mục tiêu là JavaScript thuần, dễ học, dễ bảo vệ đồ án; **không bỏ chức năng V05** khi refactor.
+
+## 1. Quy ước kiến trúc
+
+- Một repo `QLSV/`, frontend và backend nằm trong hai thư mục riêng. Tài liệu này chỉ mô tả `frontend/`.
+- HTML + CSS + JavaScript ES Modules, không bắt buộc React/Vue. CSS theo thành phần và trang; không gom toàn bộ vào một file `styles.css` tự viết 140 KB. `styles.css` biên dịch (nếu tiếp tục Tailwind) là output, không phải chỗ chỉnh tay.
+- `pages/` chứa giao diện theo vai trò; `components/` là thành phần UI tái sử dụng; `services/` gọi API backend, **không chứa SQL hoặc quy tắc phân quyền bảo mật**.
+- Mỗi màn hình nghiệp vụ chính có một file trang; dialog/form phụ chỉ tách khi đủ phức tạp. Không tạo file rỗng chỉ để trông nhiều.
+- Các trang kết quả, lịch học, đăng ký và chatbot sử dụng component chung khi trùng cách hiển thị; quyền truy cập phải được kiểm tra thêm ở backend.
+- Menu **Hồ sơ & bảo mật** duy nhất trong khu vực tài khoản; không tạo thêm mục **Đổi mật khẩu** trùng trong sidebar.
+- Không để lẫn dữ liệu demo trong phần gọi API thật. Demo có nhãn rõ ràng, chỉ bật có chủ đích.
+
+## 2. Cây thư mục frontend đầy đủ
+
+```text
+frontend/
+├── index.html                         # Điểm vào giao diện
+├── favicon.svg                        # Biểu tượng nhận diện Học Vụ
+├── assets/
+│   ├── brand/
+│   │   ├── logo.svg
+│   │   └── campus-portal.svg
+│   ├── fonts/                          # Font dự án, giữ giấy phép
+│   ├── icons/                          # Icon đặc thù nếu cần
+│   └── images/                         # Ảnh thật/ảnh minh họa do dự án sở hữu
+│
+└── src/
+    ├── main.js                        # Khởi động ứng dụng
+    ├── app/
+    │   ├── router.js                   # Chuyển trang
+    │   ├── routes.js                   # Khai báo đường dẫn và trang
+    │   ├── navigation.js               # Menu theo vai trò
+    │   ├── auth-guard.js               # Chặn điều hướng sai quyền ở UI
+    │   └── session.js                  # Trạng thái phiên trên giao diện
+    │
+    ├── layouts/
+    │   ├── auth-layout.js              # Khung đăng nhập
+    │   └── dashboard-layout.js         # Sidebar, topbar, content, footer
+    │
+    ├── components/                     # THÀNH PHẦN DÙNG CHUNG
+    │   ├── sidebar.js
+    │   ├── topbar.js
+    │   ├── page-header.js
+    │   ├── breadcrumb.js
+    │   ├── data-table.js
+    │   ├── search-filter.js
+    │   ├── pagination.js
+    │   ├── form-controls.js
+    │   ├── modal.js
+    │   ├── confirm-dialog.js
+    │   ├── tabs.js
+    │   ├── status-badge.js
+    │   ├── statistics-card.js
+    │   ├── toast.js
+    │   ├── empty-state.js
+    │   ├── loading-state.js
+    │   └── error-state.js
+    │
+    ├── pages/
+    │   ├── auth/
+    │   │   └── login.js
+    │   │
+    │   ├── dashboards/
+    │   │   ├── sysadmin-dashboard.js
+    │   │   ├── academic-dashboard.js
+    │   │   ├── lecturer-dashboard.js
+    │   │   └── student-dashboard.js
+    │   │
+    │   ├── sysadmin/                   # QUẢN TRỊ TÀI KHOẢN
+    │   │   ├── accounts.js
+    │   │   ├── account-detail.js
+    │   │   └── audit-logs.js
+    │   │
+    │   ├── academic/                   # CÁN BỘ ĐÀO TẠO
+    │   │   ├── organization/
+    │   │   │   ├── cohorts.js          # Khóa tuyển sinh
+    │   │   │   ├── faculties.js        # Khoa
+    │   │   │   ├── majors.js           # Ngành
+    │   │   │   ├── programs.js         # Chương trình theo khóa/ngành
+    │   │   │   ├── student-groups.js   # Lớp hành chính
+    │   │   │   └── group-detail.js
+    │   │   ├── catalogs/
+    │   │   │   ├── lecturers.js        # Giảng viên
+    │   │   │   ├── academic-years.js   # Năm học
+    │   │   │   ├── semesters.js        # Học kỳ
+    │   │   │   ├── rooms.js            # Phòng học
+    │   │   │   └── policies.js         # Quy chế/hệ số
+    │   │   ├── students/
+    │   │   │   ├── student-list.js
+    │   │   │   ├── student-detail.js
+    │   │   │   ├── student-contacts.js
+    │   │   │   ├── student-history.js
+    │   │   │   ├── academic-status.js
+    │   │   │   └── student-decisions.js
+    │   │   ├── curriculum/
+    │   │   │   ├── subjects.js         # Học phần
+    │   │   │   ├── curriculum-plan.js  # Học phần thuộc chương trình
+    │   │   │   ├── electives.js        # Nhóm tự chọn
+    │   │   │   └── prerequisites.js    # Tiên quyết
+    │   │   ├── teaching/
+    │   │   │   ├── course-sections.js  # Lớp học phần
+    │   │   │   ├── section-detail.js
+    │   │   │   ├── enrollments.js      # Danh sách đăng ký
+    │   │   │   └── timetable.js
+    │   │   ├── assessment/
+    │   │   │   ├── gradebook.js        # Sổ điểm
+    │   │   │   ├── grade-publication.js
+    │   │   │   ├── grade-requests.js   # Yêu cầu sửa điểm
+    │   │   │   └── semester-results.js # Tổng kết đã duyệt
+    │   │   ├── exams/
+    │   │   │   ├── exam-sessions.js    # Đợt/lịch thi
+    │   │   │   ├── exam-eligibility.js # Điều kiện thi
+    │   │   │   └── exam-rosters.js     # Danh sách dự thi
+    │   │   ├── finance/
+    │   │   │   ├── charges.js          # Khoản thu / công nợ
+    │   │   │   └── receipts.js         # Phiếu thu
+    │   │   ├── requests/
+    │   │   │   ├── academic-requests.js
+    │   │   │   └── request-detail.js
+    │   │   ├── student-affairs/
+    │   │   │   ├── warnings.js        # Cảnh báo học tập
+    │   │   │   ├── conduct.js         # Rèn luyện
+    │   │   │   └── graduation.js      # Xét tốt nghiệp
+    │   │   └── reports/
+    │   │       ├── overview.js
+    │   │       ├── student-reports.js
+    │   │       └── academic-reports.js
+    │   │
+    │   ├── lecturer/                   # GIẢNG VIÊN
+    │   │   ├── assigned-classes.js
+    │   │   ├── class-detail.js
+    │   │   ├── grade-entry.js
+    │   │   ├── teaching-schedule.js
+    │   │   ├── advisor-classes.js
+    │   │   └── lecturer-exams.js
+    │   │
+    │   ├── student/                    # SINH VIÊN
+    │   │   ├── study-plan.js
+    │   │   ├── course-registration.js
+    │   │   ├── student-schedule.js
+    │   │   ├── academic-results.js
+    │   │   ├── student-exams.js
+    │   │   ├── tuition.js
+    │   │   └── student-requests.js
+    │   │
+    │   ├── account/                    # DÙNG CHUNG CẢ 4 VAI TRÒ
+    │   │   ├── profile.js
+    │   │   └── security.js
+    │   └── errors/
+    │       ├── not-found.js
+    │       └── access-denied.js
+    │
+    ├── features/                       # BỘ PHẬN UI PHỨC HỢP TÁI SỬ DỤNG
+    │   ├── chatbot/
+    │   │   ├── chat-widget.js          # Nút nổi mở/đóng
+    │   │   ├── chat-panel.js           # Cửa sổ hội thoại
+    │   │   ├── chat-history.js
+    │   │   └── chat-results.js         # Bảng, nguồn dữ liệu, link chi tiết
+    │   ├── students/
+    │   │   ├── student-summary.js
+    │   │   └── student-tabs.js
+    │   ├── organization/
+    │   │   └── hierarchy-filter.js    # Khóa → khoa/ngành → chương trình → lớp
+    │   ├── timetable/
+    │   │   └── weekly-calendar.js
+    │   └── assessment/
+    │       └── grade-grid.js
+    │
+    ├── services/                       # CHỈ GỌI API + CHUẨN HÓA KẾT QUẢ
+    │   ├── http.js
+    │   ├── auth-service.js
+    │   ├── account-service.js
+    │   ├── organization-service.js
+    │   ├── student-service.js
+    │   ├── curriculum-service.js
+    │   ├── teaching-service.js
+    │   ├── assessment-service.js
+    │   ├── exam-service.js
+    │   ├── finance-service.js
+    │   ├── request-service.js
+    │   ├── report-service.js
+    │   └── assistant-service.js
+    │
+    ├── demo/                           # CHỈ DÙNG KHI CHẠY DEMO ĐỘC LẬP
+    │   ├── demo-data.js
+    │   └── demo-adapter.js
+    │
+    ├── utils/
+    │   ├── format.js
+    │   ├── validation.js
+    │   ├── date.js
+    │   ├── csv.js
+    │   └── escape-html.js
+    │
+    └── styles/
+        ├── main.css                    # Import các stylesheet nguồn
+        ├── fonts.css
+        ├── variables.css               # Màu, font, spacing, radius
+        ├── base.css
+        ├── layout.css
+        ├── components.css              # Thành phần nhỏ dùng chung
+        ├── forms.css
+        ├── tables.css
+        ├── chatbot.css
+        ├── auth.css
+        ├── academic.css
+        ├── student.css
+        ├── lecturer.css
+        └── responsive.css
+```
+
+**Lưu ý:** Cây trên là danh mục đích. Trong quá trình làm, một số trang có thể tái sử dụng cùng component và không cần một file mới nếu chỉ là một tab rất nhỏ. Không được tạo file chỉ để đủ số lượng. Các file `.js` không được chứa SQL trực tiếp; không để tài khoản demo, mật khẩu hay AI API key trong frontend thật.
+
+## 3. Hệ thống màn hình và menu chính
+
+### Quản trị tài khoản (`sysadmin`)
+
+| Menu | Màn hình / thao tác |
+|---|---|
+| Tổng quan | Tài khoản, trạng thái, lượt thao tác |
+| Tài khoản | Danh sách, chưa cấp, cấp từ hồ sơ, khóa/mở, đặt lại mật khẩu |
+| Nhật ký | Tìm kiếm, lọc, xem thao tác truy vết |
+| Hồ sơ & bảo mật | Thông tin cá nhân, đổi mật khẩu (trong hồ sơ, không nhân đôi menu) |
+| Chatbot | Tra cứu theo quyền quản trị, không tự động được xem dữ liệu điểm/học phí |
+
+### Cán bộ đào tạo (`academic`)
+
+| Nhóm menu | Trang con |
+|---|---|
+| Tổng quan | KPI, các công việc học vụ, tình trạng tuyển sinh và đào tạo |
+| Tổ chức đào tạo | Khóa tuyển sinh, khoa, ngành, chương trình, lớp hành chính, chi tiết lớp |
+| Danh mục nền | Giảng viên, năm học, học kỳ, phòng học, quy chế |
+| Hồ sơ sinh viên | Danh sách, chi tiết, liên hệ, lịch sử trạng thái, quyết định |
+| Chương trình học | Môn/học phần, phân bổ chương trình, nhóm tự chọn, môn tiên quyết |
+| Lớp học phần | Mở lớp, phân công giảng viên, đăng ký, thời khóa biểu |
+| Điểm & kết quả | Sổ điểm, công bố, yêu cầu sửa điểm, tổng kết học kỳ |
+| Thi cử | Lịch thi, điều kiện thi, danh sách dự thi |
+| Học phí | Khoản thu, công nợ, phiếu thu, lịch sử |
+| Yêu cầu học vụ | Tiếp nhận, duyệt/từ chối, trả lời |
+| Công tác sinh viên | Cảnh báo, rèn luyện, xét tốt nghiệp |
+| Báo cáo | Thống kê sinh viên, cơ cấu khóa/lớp, đào tạo và kết quả |
+| Hồ sơ & bảo mật, chatbot | Dùng chung nhưng áp dụng phân quyền cán bộ |
+
+### Giảng viên (`lecturer`)
+
+| Menu | Màn hình / thao tác |
+|---|---|
+| Tổng quan | Lớp được phân công, lịch sắp tới, việc cần xử lý |
+| Lớp giảng dạy | Danh sách và danh sách sinh viên từng lớp học phần |
+| Nhập điểm | Điểm thành phần của lớp được giao, lưu nháp |
+| Lịch giảng dạy | Lịch tuần, phòng, tiết |
+| Lớp cố vấn | Lớp hành chính phụ trách, sinh viên và hồ sơ được cấp quyền |
+| Kỳ thi | Lịch thi liên quan |
+| Hồ sơ & bảo mật, chatbot | Dùng chung; không xem hồ sơ ngoài phạm vi được giao |
+
+### Sinh viên (`student`)
+
+| Menu | Màn hình / thao tác |
+|---|---|
+| Tổng quan | Thông báo cá nhân, kết quả chính, lịch gần nhất |
+| Chương trình học | Tín chỉ và các học phần cần hoàn thành |
+| Đăng ký học phần | Tìm lớp mở, chọn, kiểm tra điều kiện, xác nhận |
+| Thời khóa biểu | Lịch tuần/học kỳ của bản thân |
+| Kết quả học tập | Điểm đã công bố, các lần học, tín chỉ, GPA được duyệt |
+| Kỳ thi | Lịch thi, thông tin thi được công bố |
+| Học phí | Khoản thu, dư nợ, lịch sử phiếu thu |
+| Yêu cầu học vụ | Gửi yêu cầu, theo dõi và xem phản hồi |
+| Hồ sơ & bảo mật | Thông tin cá nhân, người liên hệ, mật khẩu |
+| Chatbot | Tra cứu dữ liệu của chính tài khoản |
+
+## 4. Quy tắc về dữ liệu đại học
+
+- **Khóa tuyển sinh** là một năm/đợt tuyển sinh, có nhiều **chương trình thuộc ngành**. Một khoa có nhiều ngành; một ngành có thể có nhiều chương trình theo khóa; mỗi chương trình có nhiều **lớp hành chính**; mỗi lớp có nhiều sinh viên.
+- **Lớp hành chính** (student_groups) **khác** **lớp học phần** (classes). Hai màn hình quản lý và bộ lọc riêng.
+- Trang danh sách sinh viên có lọc bậc: khóa → khoa → ngành → chương trình → lớp; không xem mỗi khóa là chỉ có một lớp/ngành.
+- Bảng điểm không tự đổi NULL thành 0. GPA chính thức chỉ hiển thị khi có bản tổng kết đã duyệt theo quy chế.
+- Khi người dùng xem hồ sơ: phải kiểm soát đúng vai trò (cán bộ theo quyền; giảng viên được giao/cố vấn; sinh viên của chính mình); bảo mật không chỉ dựa vào ẩn nút trên UI.
+- Chatbot có giao diện hội thoại thật, lịch sử, kiểm tra quyền mỗi lượt, nguồn dữ liệu rõ ràng; AI API key luôn ở backend.
+
+## 5. Đường dẫn (route) khuyến nghị
+
+Giữ nguyên tiền tố vai trò từ V05 để giảm rủi ro khi nâng cấp:
+
+| Vai trò | Ví dụ |
+|---|---|
+| Đăng nhập | `#/login` |
+| Quản trị | `#/sysadmin/dashboard`, `#/sysadmin/accounts`, `#/sysadmin/audit` |
+| Cán bộ | `#/academic/dashboard`, `#/academic/organization/cohorts`, `#/academic/organization/groups`, `#/academic/students`, `#/academic/courses`, `#/academic/grades`, `#/academic/reports` |
+| Giảng viên | `#/lecturer/dashboard`, `#/lecturer/courses`, `#/lecturer/grades`, `#/lecturer/schedule`, `#/lecturer/advisor` |
+| Sinh viên | `#/student/dashboard`, `#/student/plan`, `#/student/registration`, `#/student/schedule`, `#/student/results`, `#/student/fees` |
+| Cá nhân | `#/<vai-tro>/account`, `#/<vai-tro>/account/security` (sinh viên có thể giữ alias cũ `/student/profile/{id}/...`) |
+
+Các trang mới cần định nghĩa route đầy đủ khi xây dựng; không được có mục menu trỏ tới trang trắng.
+
+## 6. Hướng dẫn sửa theo yêu cầu giáo viên
+
+| Giáo viên yêu cầu | File giao diện cần mở trước | Dịch vụ API liên quan |
+|---|---|---|
+| Thêm bộ lọc khóa / khoa / ngành / lớp | `pages/academic/students/student-list.js` + `features/organization/hierarchy-filter.js` | `services/student-service.js` |
+| Sửa tạo/sửa/xóa lớp hành chính | `pages/academic/organization/student-groups.js` | `services/organization-service.js` |
+| Chỉnh bố cục sidebar | `components/sidebar.js` + `styles/layout.css` | Không cần sửa backend |
+| Chỉnh sổ điểm giảng viên | `pages/lecturer/grade-entry.js` + `features/assessment/grade-grid.js` | `services/assessment-service.js` |
+| Chỉnh đăng ký học phần | `pages/student/course-registration.js` | `services/teaching-service.js` |
+| Chỉnh chatbot | `features/chatbot/chat-panel.js`, `chat-results.js` | `services/assistant-service.js` |
+| Chỉnh logo/font/màu | `assets/brand/`, `styles/fonts.css`, `styles/variables.css` | Không cần sửa backend |
+| Chỉnh đổi mật khẩu | `pages/account/security.js` | `services/auth-service.js` |
+
+## 7. Tình trạng thực tế V05 và kế hoạch chuyển đổi
+
+**V05 đã có**: đăng nhập/đăng xuất/đổi mật khẩu, trang 4 vai trò, tổ chức khóa/khoa/ngành/chương trình/lớp, hồ sơ, lớp học phần, lịch, đăng ký, điểm, thi cơ bản, học phí, yêu cầu, báo cáo, tài khoản, nhật ký, chatbot và giao diện responsive đã kiểm tra một số kích cỡ.
+
+**V05 chưa hoàn chỉnh**: quản lý đầy đủ năm học/học kỳ/quy chế/giảng viên; môn tự chọn và tiên quyết; quy trình thi bù/thi lại/duyệt điều kiện; công bố nhiều bước; sửa điểm có phê duyệt; tổng kết GPA theo quy chế thực tế; cảnh báo/rèn luyện/xét tốt nghiệp; phân quyền theo khoa; kiểm thử thực tế với MySQL/LLM và điện thoại thật. Đây là **màn hình mục tiêu**, không được giới thiệu là đã hoạt động.
+
+**Phương pháp triển khai V06**:
+1. Di chuyển các hàm dùng chung từ `ui.js` thành components, không đổi hành vi.
+2. Di chuyển router/layout/menu từ `app.js` sang `app/` và `layouts/`.
+3. Di chuyển từng page khỏi `pages.js` theo vai trò và domain, giữ routes cũ.
+4. Tách phần gọi API từ `repository.js`; đưa demo data sang `demo/`.
+5. Tách CSS nguồn theo các nhóm; bỏ rule cũ trùng, không sao chép đè hàng trăm rule.
+6. Kiểm thử lại đăng nhập, CRUD, lịch, điểm, chatbot, responsive và phân quyền sau **mỗi** nhóm chuyển đổi.
+7. Sau khi các màn hình hiện có chạy ổn mới bổ sung nghiệp vụ chưa hoàn chỉnh, đối chiếu 36 bảng nguồn.
+
+> Yêu cầu nghiệm thu: không còn `app.js`/`pages.js` khổng lồ chứa nhiều màn hình; không menu trùng; không code cũ tồn đọng; mỗi file có nhiệm vụ rõ; `npm run dev` hoạt động từ gốc và có README chỉ rõ vị trí sửa từng tính năng.

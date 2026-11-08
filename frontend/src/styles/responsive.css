@@ -1,0 +1,182 @@
+/* V06: lớp điều chỉnh riêng, không sửa CSS tự sinh. */
+:root { font-family: "Segoe UI", Arial, sans-serif; }
+img,svg { max-width:100%; }
+button,input,select,textarea { font:inherit; }
+:focus-visible { outline:3px solid #4b997f; outline-offset:2px; }
+@media (prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto !important; transition-duration:.01ms !important; animation-duration:.01ms !important; } }
+/* Lịch nhiều buổi dùng chung cho danh sách lớp, chi tiết và giỏ đăng ký. */
+.class-session-list { list-style:none; margin:4px 0; padding:0; display:grid; gap:4px; }
+.class-session-list li { font-size:12px; line-height:1.5; color:var(--ink); overflow-wrap:anywhere; }
+.course-card .class-session-list li { text-align:right; }
+.cart-item .class-session-list li { font-size:11px; color:var(--muted); }
+@media (max-width:760px) {
+  .course-card dl>div { align-items:flex-start; }
+  .course-card dd { max-width:70%; }
+}
+
+/* V06.13.2 — Điều chỉnh khả năng đọc/chạm trên máy tính và điện thoại.
+   Đặt ở responsive.css (nạp sau generated.css) để không sửa bản CSS biên dịch. */
+:root { color-scheme: light; }
+/* Đủ độ đọc ở desktop mà không làm thay đổi các khối bố cục cũ. */
+.nav-link, .btn, .btn.small { font-size: 13px; }
+.card-head h2 { font-size: 16px; }
+.table-scroll th { font-size: 12px; }
+.table-scroll td { font-size: 13px; }
+.field > span, .filter-bar label { font-size: 12px; }
+.chat-disclaimer, .chat-reply, .user-message > p { font-size: 12px; line-height: 1.6; }
+.workspace, .workspace main#main { min-width: 0; }
+.topbar-right, .breadcrumb { min-width: 0; }
+.breadcrumb strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.table-scroll { max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; }
+.table-scroll table { width: 100%; }
+.chat-ai-check { gap: 10px; line-height: 1.5; }
+.chat-ai-check button { min-height: 40px; font-size: 12px; }
+
+@media (max-width: 760px) {
+  /* Kích thước cỡ chữ cũ 8–11px gây khó đọc khi demo trên điện thoại. */
+  .workspace .page-head .lead, .lead, .card-head p,
+  .empty p, .notice p, .login-story > p:not(.eyebrow),
+  .login-form-wrap > .lead, .login-bottom, .demo-accounts > p,
+  .chat-welcome > p, .chat-reply, .user-message > p,
+  .chat-disclaimer, .grade-summary p, .schedule-list small,
+  .course-card > p, .course-card dt, .course-card dd,
+  .details dt, .details dd, .helper { font-size: 13px; line-height: 1.65; }
+  .field > span, .login-form-wrap .field > span,
+  .chat-data > summary, .chat-data th, .chat-data td,
+  .work-queue > a, .tabs > a, .stat-top, .stat > small,
+  .section-line, .login-options, .login-form-side > footer,
+  .demo-pill, .environment-label, .dialog-head .eyebrow,
+  .chat-composer > div > span { font-size: 12px; line-height: 1.5; }
+  .workspace .page-head h1 { font-size: clamp(24px, 6.5vw, 28px); }
+  .card-head h2 { font-size: 16px; }
+  .btn, .btn.small, .head-actions .btn, .course-actions .btn,
+  .role-grid .btn, .segmented .btn, .chat-prompts button,
+  .login-form-wrap form > .btn.primary { font-size: 13px; min-height: 44px; }
+  .btn.icon-btn, .topbar .icon-btn, .chat-toolbar button,
+  .chat-composer button[type="submit"] { min-width: 40px; min-height: 44px; }
+  .head-actions { flex-wrap: wrap; }
+  .head-actions > *, .filter-bar > * { max-width: 100%; }
+  .filter-bar, .card-head, .dialog-foot { flex-wrap: wrap; }
+  .tabs { overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
+  .tabs > a { flex-shrink: 0; }
+  .course-actions { flex-wrap: wrap; }
+  .course-actions .btn { flex: 1 1 140px; }
+  .details > div { grid-template-columns: minmax(92px, 35%) minmax(0,1fr); }
+  .details dd, .course-card dd { min-width: 0; overflow-wrap: anywhere; }
+  /* Chat mobile dùng toàn bộ không gian; không chừa 83px cho launcher đã ẩn. */
+  .chatbot, .chatbot-wide {
+    top: max(8px, env(safe-area-inset-top));
+    bottom: max(8px, env(safe-area-inset-bottom));
+    left: 8px; right: 8px;
+    height: auto; max-height: none;
+  }
+  .chat-header { gap: 7px; padding: 12px; }
+  .chat-header h2 { font-size: 14px; }
+  .chat-toolbar { gap: 2px; }
+  .chat-toolbar button { width: 40px; padding: 8px; }
+  .chat-composer textarea { font-size: 16px; }
+  .chat-ai-check { padding: 9px 12px; font-size: 12px; }
+  .chat-ai-check button { min-height: 44px; }
+  .login-form-side { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+  .login-form-wrap input { font-size: 16px; }
+  .password-toggle { min-height: 38px; min-width: 44px; font-size: 12px; }
+  .role-grid .btn { white-space: normal; text-align: left; }
+}
+
+@media (max-width: 360px) {
+  .stats, .stats.three { grid-template-columns: minmax(0, 1fr); }
+  .stats.three .stat:last-child { grid-column: auto; }
+  .stat { min-height: 116px; }
+  .sidebar { max-width: calc(100vw - 48px); }
+  .chat-brand { width: 32px; height: 32px; }
+  .chat-toolbar button { width: 38px; min-width: 38px; }
+  .chat-header h2 { font-size: 13px; }
+}
+
+/* V06.14 — Content containment applies on desktop as well as mobile. */
+.workspace main#main { width:100%; }
+.page-head { flex-wrap:wrap; }
+.page-head>div:first-child { flex:1 1 280px; min-width:0; }
+.head-actions { max-width:100%; min-width:0; align-items:center; }
+h1,h2,h3,p,.details dd,.person strong,.person small,.card-head>div,.card-body { overflow-wrap:anywhere; }
+.card-head,.section-summary { display:flex; flex-wrap:wrap; align-items:flex-start; gap:16px; }
+.card-head>div:first-child { flex:1 1 230px; min-width:0; }
+.card-actions,.action-wrap,.management-links { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+.card-body { padding:0 24px 24px; min-width:0; }
+.card-body>.details { padding:0; }
+.card-body>.table-scroll { border:1px solid var(--line); border-radius:10px; }
+.card-body>.empty { min-height:150px; padding:24px 12px; }
+.card-body>.notice { margin-bottom:16px; }
+.card-body>button + .empty { margin-top:16px; }
+.form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
+.form-grid>label,.field { display:flex; flex-direction:column; gap:8px; min-width:0; }
+.form-grid .full { grid-column:1/-1; }
+.form-grid select,.form-grid input,.form-grid textarea,.field select,.field input,.field textarea { width:100%; min-width:0; max-width:100%; }
+.form-grid label>select,.form-grid label>input { display:block; }
+.form-grid.compact-fields { margin-top:18px; }
+.request-status { max-width:320px; margin-bottom:18px; }
+.form-grid select,.field select { text-overflow:ellipsis; }
+.btn { max-width:100%; }
+.card-actions .btn,.head-actions .btn,.action-wrap .btn,.course-actions .btn { white-space:normal; }
+.btn.small { width:auto; height:auto; min-width:44px; }
+.row-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.row-actions .btn { flex-shrink:0; }
+.table-scroll { width:100%; }
+.table-scroll th,.table-scroll td { max-width:420px; }
+.table-scroll td>strong { display:block; }
+.person { min-width:0; max-width:100%; }
+.person>div { min-width:0; }
+.avatar { overflow:hidden; }
+.avatar img { width:100%; height:100%; object-fit:cover; }
+.profile-hero .avatar { width:72px; height:72px; }
+.photo-field { display:grid; grid-template-columns:minmax(0,1fr) 120px; gap:20px; padding:18px; border:1px solid var(--line); border-radius:12px; }
+.photo-field p { color:var(--muted); font-size:13px; margin:8px 0 12px; }
+.photo-preview { width:120px; height:150px; object-fit:cover; border-radius:10px; border:1px solid var(--line); }
+.photo-preview[hidden] { display:none; }
+.check-label { display:flex; flex-direction:row; align-items:flex-start; gap:10px; line-height:1.5; }
+.check-label input[type=checkbox] { width:18px; height:18px; flex:0 0 18px; margin-top:3px; }
+.teacher-picker { border:1px solid var(--line); border-radius:12px; padding:16px; min-width:0; }
+.teacher-picker legend { padding:0 8px; font-weight:600; }
+.teacher-picker p { font-size:13px; color:var(--muted); margin-bottom:12px; }
+.teacher-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; max-height:260px; overflow:auto; }
+.management-links { margin-bottom:20px; }
+.section-summary { justify-content:space-between; margin-bottom:18px; }
+.section-summary strong { font-size:17px; }
+.section-summary p { color:var(--muted); margin-top:6px; }
+.target-tags { display:flex; flex-wrap:wrap; gap:10px; }
+.target-tags .badge { white-space:normal; }
+.calendar-event { min-width:0; }
+.calendar-event .badge { white-space:normal; font-size:11px; }
+.notice>p { min-width:0; }
+.filter-bar .field { flex:1 1 160px; }
+@media(max-width:1100px) {
+  .two-cols.main-side { grid-template-columns:minmax(0,1fr); }
+  .course-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:760px) {
+  .form-grid { grid-template-columns:minmax(0,1fr); }
+  .card-body { padding:0 16px 20px; }
+  .card-head { padding:20px 16px; }
+  .card-actions { width:100%; }
+  .card-actions .btn,.action-wrap .btn { flex:1 1 140px; }
+  .teacher-options { grid-template-columns:minmax(0,1fr); }
+  .photo-field { grid-template-columns:minmax(0,1fr); }
+  .course-grid { grid-template-columns:minmax(0,1fr); }
+  .management-links .btn { flex:1 1 150px; }
+  .dialog-body,.dialog-head,.dialog-foot { min-width:0; }
+}
+
+/* Account role/profile forms share the responsive grid without hidden dependencies. */
+.account-profile-panel { border:1px solid var(--line); border-radius:12px; padding:18px; min-width:0; }
+.account-profile-panel select { width:100%; min-width:0; }
+.account-profile-panel [data-new-profile]:empty { display:none; }
+.account-profile-panel .compact-fields { margin-top:18px; }
+
+/* Admin workspace: scoped totals and management forms keep contained layouts. */
+.stats.admin-stats { grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr)); }
+.admin-stats .stat strong { font-variant-numeric:tabular-nums; }
+.admin-stats .stat .btn,.stats .stat .text-link { display:flex; margin-top:12px; }
+.admin-year-filter { max-width:340px; margin-bottom:20px; }
+.card-body .filter-bar { padding:12px 0 18px; }
+.card-body .work-queue .btn { justify-content:flex-start; width:100%; white-space:normal; text-align:left; }
+@media(max-width:760px) { .admin-stats { gap:12px; } .admin-stats .stat { min-width:0; } }

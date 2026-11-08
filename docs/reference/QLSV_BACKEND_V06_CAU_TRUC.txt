@@ -1,0 +1,308 @@
+# CẤU TRÚC BACKEND QLSV V06 — THIẾT KẾ ĐỀ XUẤT
+
+**Nguồn đối chiếu:** `QLSV_FULLSTACK_UIUX_V05.zip` (07/11/2026). **Trạng thái:** tài liệu thiết kế cấu trúc; chưa phải backend V06 đã viết lại, chưa có bằng chứng kiểm thử V06.
+
+**Mục đích:** Backend dễ đọc, dễ học, dễ giải thích trước giảng viên; chia đúng nghiệp vụ quản lý đại học; không làm mất chức năng và dữ liệu V05; không giữ file cũ trùng lặp sau khi chuyển đổi thành công.
+
+## A. Hiện trạng được xác minh trong V05
+
+- Node.js **HTTP thuần** với JavaScript ES Modules; **không dùng Express**.
+- Cơ sở dữ liệu: **36 bảng SQL lõi** trong `qlsv-original.sql`, kèm **8 bảng mở rộng** trong `extensions.sql`. Driver MySQL (`mysql2`) hoặc SQLite (`node:sqlite`), chọn bằng môi trường.
+- Có phiên đăng nhập qua cookie HttpOnly, CSRF, kiểm tra quyền, nhật ký thao tác, nhập/xem điểm, công bố kết quả, đăng ký lớp học phần, chatbot AI có kiểm soát quyền.
+- Mã nghiệp vụ hiện còn tập trung trong `server.js`, `mutations.js`, `state.js`, `results.js`, `assistant.js`; `assistant.js` còn import logic ý định tra cứu từ thư mục `frontend/src`, chưa tách mã dùng chung đúng vị trí.
+- API V05 sử dụng `/api/v1/state` (trả snapshot theo quyền) và `/api/v1/changes` (ghi nhiều loại thay đổi bằng một endpoint). Trong V06 nên chuyển dần sang API theo tài nguyên. **Không xóa endpoint cũ trước khi frontend và tests đã chuyển xong.**
+- Phải tách **lớp hành chính** (`student_groups`) với **lớp học phần** (`classes`); **lần học** (`enrollments`) với **lần thi** (`exam_registrations`). Đây là hai cặp nghiệp vụ không được nhập làm một.
+
+## B. Cấu trúc toàn dự án
+
+```text
+QLSV/
+├── frontend/                        # Frontend V06 đã định hướng riêng
+├── backend/                         # Backend nằm trong cùng dự án
+├── shared/
+│   └── lookup-intents.js            # Quy ước ý định AI dùng chung (không chứa SQL/quyền)
+├── tests/                           # Integration, API, phân quyền, E2E
+├── docs/                            # Tài liệu học và bảo vệ đồ án
+├── scripts/                         # Lệnh phát triển/build ở cấp dự án
+├── package.json                     # Quản lý scripts tại thư mục gốc
+├── package-lock.json
+├── .env.example
+├── .gitignore
+└── README.md
+```
+
+**Nguyên tắc:** chỉ **một** `package.json` gốc như V05 nếu không thật sự cần workspaces. Không tạo thêm backend thứ hai hoặc sao chép frontend vào backend.
+
+## C. Cây thư mục backend đầy đủ
+
+```text
+backend/
+├── README.md
+│
+├── database/
+│   ├── qlsv-original.sql            # Giữ thiết kế MySQL: 36 bảng lõi
+│   ├── qlsv-sqlite.sql              # Cấu trúc tương ứng cho demo SQLite
+│   ├── extensions.sql               # Các bảng mở rộng V05
+│   ├── migrations/                  # Thay đổi DB có phiên bản, không sửa ngầm dữ liệu cũ
+│   │   └── README.md
+│   └── seeds/
+│       ├── roles.seed.js            # Bốn vai trò
+│       └── demo.seed.js             # Dữ liệu giả, chỉ chạy khi bật demo
+│
+├── scripts/
+│   ├── init.mjs                     # Khởi tạo schema
+│   ├── bootstrap.mjs                # Khởi tạo admin/cán bộ ban đầu
+│   └── seed.mjs                     # Nạp dữ liệu mẫu có kiểm soát
+│
+├── data/                            # SQLite tại máy khi dùng demo; bỏ khỏi Git
+│
+└── src/
+    ├── server.js                   # Mở cổng HTTP; không chứa toàn bộ nghiệp vụ
+    ├── app.js                      # Tạo ứng dụng, đăng ký routes + middleware
+    │
+    ├── config/
+    │   ├── env.js                  # Kiểm tra biến môi trường
+    │   └── database.js             # Chọn MySQL/SQLite và kết nối
+    │
+    ├── core/
+    │   ├── router.js               # Đăng ký GET/POST/PATCH/DELETE cho HTTP thuần
+    │   ├── request.js              # Đọc body, query params, giới hạn dung lượng
+    │   ├── response.js             # JSON thống nhất {data} / {error}
+    │   ├── errors.js               # AppError và mã lỗi HTTP
+    │   └── transaction.js          # Giao dịch DB và rollback
+    │
+    ├── middlewares/
+    │   ├── authenticate.js         # Xác thực cookie/phiên
+    │   ├── authorize.js            # Kiểm tra vai trò/phạm vi dữ liệu
+    │   ├── csrf.js                 # Bảo vệ thao tác ghi
+    │   ├── rate-limit.js           # Giới hạn yêu cầu
+    │   └── error-handler.js        # Trả lỗi, không lộ thông tin bí mật
+    │
+    ├── modules/
+    │   ├── auth/
+    │   │   ├── auth.routes.js       # Login, logout, me, đổi mật khẩu
+    │   │   ├── auth.controller.js
+    │   │   ├── auth.service.js
+    │   │   └── auth.repository.js
+    │   │
+    │   ├── accounts/
+    │   │   ├── accounts.routes.js   # Tài khoản, vai trò, khóa/mở
+    │   │   ├── accounts.controller.js
+    │   │   ├── accounts.service.js
+    │   │   └── accounts.repository.js
+    │   │
+    │   ├── organization/
+    │   │   ├── organization.routes.js
+    │   │   ├── organization.controller.js
+    │   │   ├── cohorts.service.js   # Khóa tuyển sinh
+    │   │   ├── departments.service.js # Khoa/đơn vị đào tạo
+    │   │   ├── majors.service.js    # Ngành
+    │   │   ├── curricula.service.js # CTĐT theo ngành + năm tuyển sinh
+    │   │   ├── groups.service.js    # Lớp hành chính
+    │   │   └── organization.repository.js
+    │   │
+    │   ├── academic-calendar/
+    │   │   ├── calendar.routes.js   # Năm học, học kỳ
+    │   │   ├── calendar.controller.js
+    │   │   ├── calendar.service.js
+    │   │   └── calendar.repository.js
+    │   │
+    │   ├── students/
+    │   │   ├── students.routes.js    # Danh sách và chi tiết SV
+    │   │   ├── students.controller.js
+    │   │   ├── students.service.js  # Hồ sơ, liên hệ, trạng thái
+    │   │   ├── students.repository.js
+    │   │   └── student-decisions.service.js # Quyết định, bảo lưu/thôi học...
+    │   │
+    │   ├── lecturers/
+    │   │   ├── lecturers.routes.js
+    │   │   ├── lecturers.controller.js
+    │   │   ├── lecturers.service.js
+    │   │   └── lecturers.repository.js
+    │   │
+    │   ├── curriculum/
+    │   │   ├── curriculum.routes.js  # Môn học, môn tự chọn, tiên quyết
+    │   │   ├── curriculum.controller.js
+    │   │   ├── curriculum.service.js
+    │   │   └── curriculum.repository.js
+    │   │
+    │   ├── teaching/
+    │   │   ├── teaching.routes.js    # Lớp học phần, phòng, TKB
+    │   │   ├── teaching.controller.js
+    │   │   ├── teaching.service.js
+    │   │   ├── timetable.service.js # Kiểm tra trùng lịch, phòng, GV
+    │   │   └── teaching.repository.js
+    │   │
+    │   ├── enrollments/
+    │   │   ├── enrollments.routes.js # Đăng ký/rút lớp học phần
+    │   │   ├── enrollments.controller.js
+    │   │   ├── enrollments.service.js
+    │   │   └── enrollments.repository.js
+    │   │
+    │   ├── assessment/
+    │   │   ├── assessment.routes.js  # Đầu điểm, bảng điểm, xét công bố
+    │   │   ├── assessment.controller.js
+    │   │   ├── assessment.service.js
+    │   │   ├── publication.service.js # Công bố điểm có transaction
+    │   │   ├── grade-changes.service.js # Quy trình đề nghị sửa điểm
+    │   │   └── assessment.repository.js
+    │   │
+    │   ├── exams/
+    │   │   ├── exams.routes.js       # Lịch thi, điều kiện, lần thi
+    │   │   ├── exams.controller.js
+    │   │   ├── exams.service.js
+    │   │   └── exams.repository.js
+    │   │
+    │   ├── student-affairs/
+    │   │   ├── affairs.routes.js     # Cảnh báo học tập, rèn luyện, quyết định
+    │   │   ├── affairs.controller.js
+    │   │   ├── affairs.service.js
+    │   │   └── affairs.repository.js
+    │   │
+    │   ├── finance/
+    │   │   ├── finance.routes.js     # Khoản thu và phiếu thu V05 mở rộng
+    │   │   ├── finance.controller.js
+    │   │   ├── finance.service.js
+    │   │   └── finance.repository.js
+    │   │
+    │   ├── requests/
+    │   │   ├── requests.routes.js    # Đơn/yêu cầu học vụ, phê duyệt
+    │   │   ├── requests.controller.js
+    │   │   ├── requests.service.js
+    │   │   └── requests.repository.js
+    │   │
+    │   ├── reports/
+    │   │   ├── reports.routes.js     # Thống kê sĩ số, khóa, ngành, lớp...
+    │   │   ├── reports.controller.js
+    │   │   ├── reports.service.js
+    │   │   └── reports.repository.js
+    │   │
+    │   ├── ai/
+    │   │   ├── ai.routes.js          # Chatbot: hội thoại, tin nhắn, tra cứu
+    │   │   ├── ai.controller.js
+    │   │   ├── ai.service.js
+    │   │   ├── ai-intents.js         # Nhận diện ý định; dùng contract chung
+    │   │   ├── ai-tools.js           # Các truy vấn chỉ đọc được cho phép
+    │   │   ├── ai-provider.js        # Kết nối model qua HTTPS, giữ API key ở server
+    │   │   └── ai.repository.js      # Hội thoại, lịch sử, tham số truy vấn
+    │   │
+    │   └── audit/
+    │       ├── audit.routes.js      # Nhật ký đọc bởi admin đúng quyền
+    │       ├── audit.service.js
+    │       └── audit.repository.js
+    │
+    └── utils/
+        ├── validation.js           # Chuẩn hóa và kiểm tra dữ liệu đầu vào
+        ├── pagination.js           # Trang, giới hạn số bản ghi
+        ├── dates.js                # Ngày/giờ nhất quán
+        └── identifiers.js          # Kiểm tra mã định danh và ID
+```
+
+**Lưu ý:** Đây là *bản đồ vị trí mã nguồn khi triển khai đầy đủ*, không phải yêu cầu tạo ngay hàng chục file rỗng. Đối với nghiệp vụ nhỏ, có thể dùng 2–3 file trước; khi phức tạp mới tách thêm. `database/` lưu bên trong backend để dễ tìm; `.env` và `package.json` đặt ở cấp gốc.
+
+## D. Nghiệp vụ gắn với 36 bảng lõi
+
+| Nhóm backend | Bảng gốc liên quan |
+|---|---|
+| `auth/`, `accounts/`, `audit/` | `roles`, `users`, `audit_logs` |
+| `organization/` | `departments`, `majors`, `curricula`, `student_groups` |
+| `academic-calendar/` | `academic_years`, `semesters` |
+| `students/` | `students`, `student_contacts`, `student_status_history`, `student_decisions` |
+| `lecturers/` | `lecturers`, `staffs` |
+| `curriculum/` | `academic_policies`, `subjects`, `elective_groups`, `curriculum_subjects`, `subject_prerequisites` |
+| `teaching/` | `rooms`, `classes`, `class_schedules` |
+| `enrollments/` | `enrollments` |
+| `assessment/` | `assessments`, `grades`, `course_results`, `result_components`, `grade_change_requests` |
+| `exams/` | `exam_sessions`, `exam_registrations`, `exam_eligibility` |
+| `student-affairs/` | `academic_warnings`, `conduct_results`, `student_decisions` |
+| `requests/` | `academic_requests` |
+| `reports/` | `semester_summaries` + các bảng cần thống kê |
+
+**Bảng bổ sung trong `extensions.sql`**: `cohorts`, `user_security`, `sessions`, `app_lock`, `charges`, `receipts`, `ai_conversations`, `ai_messages`. `cohorts` thể hiện khóa trên UI; mối liên hệ khóa tuyển sinh với `curricula.admission_year` phải thống nhất, **không tự phát sinh hai hệ định danh khóa trái nhau**. Các bảng tài chính và AI là mở rộng, không được giả nhận thuộc 36 bảng gốc.
+
+## E. Ví dụ giảng viên yêu cầu sửa “quản lý lớp theo khóa, ngành”
+
+**Phần frontend:** `frontend/src/pages/academic/organization/student-groups.js` và thành phần lọc dùng chung.
+
+**Đường đi xử lý backend:**
+
+```text
+Người dùng chọn khóa tuyển sinh / khoa / ngành
+    ↓
+GET /api/v1/student-groups?admissionYear=2024&majorId=...
+    ↓
+modules/organization/organization.routes.js
+    ↓
+modules/organization/organization.controller.js
+    ↓
+modules/organization/groups.service.js
+    ↓
+modules/organization/organization.repository.js
+    ↓
+MySQL: student_groups + curricula + majors + departments
+    ↓
+Trả {data: {items, pagination}} theo quyền người đăng nhập
+```
+
+Vì `student_groups` không lưu trực tiếp khoa/ngành/khóa một cách độc lập, cần JOIN qua `curricula` → `majors` → `departments` và trường năm tuyển sinh tương ứng. Bộ lọc phải phân trang, không tải tất cả sinh viên/lớp về trình duyệt để xử lý.
+
+## F. Phác thảo API V06 theo nhóm tài nguyên (chưa code)
+
+| Nhóm | Ví dụ endpoint | Quyền tổng quát |
+|---|---|---|
+| Phiên | `POST /api/v1/auth/login`; `GET /auth/me`; `POST /auth/logout`; `PATCH /auth/password` | Theo phiên của người dùng |
+| Tài khoản | `GET /api/v1/accounts`; `PATCH /api/v1/accounts/:id` | ADMIN, giới hạn quyền cấp phát |
+| Cơ cấu | `GET /api/v1/cohorts`; `/departments`; `/majors`; `/student-groups` | Xem/sửa theo vai trò |
+| Hồ sơ SV | `GET /api/v1/students`; `GET /students/:id`; `PATCH /students/:id` | SV chỉ của mình; GV trong phạm vi; cán bộ theo quyền |
+| Đào tạo | `/subjects`; `/curricula`; `/classes`; `/schedules` | Lưu nghiệp vụ theo phạm vi |
+| Đăng ký | `POST /api/v1/enrollments` | SV đúng tài khoản; kiểm tra số chỗ/điều kiện |
+| Điểm | `/grades`; `/results`; `/grade-change-requests` | Nhập/công bố/phê duyệt phân quyền, có audit |
+| Thi | `/exams`; `/exam-registrations`; `/exam-eligibility` | Theo vai trò/đợt thi |
+| Học phí | `/charges`; `/receipts` | Xem/ghi trong phạm vi được cấp |
+| Đơn từ | `/academic-requests` | Người gửi/giảng viên/cán bộ đúng phạm vi |
+| Báo cáo | `/reports/...` | Tổng hợp chỉ cho người có quyền |
+| Chatbot | `/ai/conversations`; `/ai/messages`; `/lookup` | Chỉ đọc, kết quả lọc bởi backend |
+
+Trong quá trình nâng cấp, route V05 vẫn có thể tồn tại dưới dạng lớp tương thích tạm thời. Không thay URL hàng loạt khiến frontend hiện hữu bị hỏng.
+
+## G. Nguyên tắc cần bảo đảm khi viết code
+
+1. **Dễ giải thích:** `routes` chọn địa chỉ, `controller` nhận/trả HTTP, `service` xử lý quy tắc, `repository` truy vấn SQL. Không viết HTML/CSS trong backend.
+2. **Giữ đúng DB:** không xóa bảng lõi vì tên khó nhớ. Mọi thay đổi schema thực hiện qua migration có ghi chú.
+3. **Quyền truy cập ở server:** 4 vai trò `ADMIN`, `ACADEMIC_STAFF`, `LECTURER`, `STUDENT`; không chỉ ẩn nút ở frontend. ADMIN quản trị hệ thống không mặc nhiên có toàn bộ hồ sơ học vụ.
+4. **Không sao chép logic:** `students.service.js` chỉ xử lý hồ sơ; nghiệp vụ cấp lớp ở `organization`; nhập/công bố điểm ở `assessment`. Hàm dùng chung đặt trong `utils` hoặc `core`.
+5. **Dữ liệu thật và demo phân biệt:** không đưa tài khoản/mật khẩu demo vào môi trường thật; key AI chỉ ở backend; không đưa SQL hay thông tin cá nhân vào log.
+6. **Quy trình điểm có transaction:** tổng trọng số, điều kiện dự thi, tính điểm, công bố, nguồn điểm và audit phải nhất quán; khi lỗi rollback.
+7. **Bảo mật:** cookie HttpOnly/SameSite, CSRF, băm mật khẩu, rate-limit, kiểm tra Origin cho thao tác ghi, tham số SQL ràng buộc, đầu vào hợp lệ.
+8. **Hiệu năng:** lọc dữ liệu tại SQL, `LIMIT/OFFSET`, index phù hợp; tránh mô hình `/state` đọc hàng chục bảng trên mọi trang.
+9. **Chatbot:** không được tự tạo hoặc thực thi SQL tuỳ ý; chỉ gọi tool tra cứu cho phép và kiểm tra quyền. Không dùng frontend để quyết định dữ liệu nào được trả.
+10. **Không sót code cũ:** chuyển từng nghiệp vụ và test; sau đó loại bỏ `mutations.js`, `state.js`, `results.js`, `assistant.js` kiểu gom tất cả **chỉ khi** không còn nơi nào import và tests đã qua.
+11. **Không chia quá vụn:** các file `*.controller.js` có thể bỏ qua với nghiệp vụ cực nhỏ khi controller chỉ một dòng; ưu tiên cấu trúc rõ ràng, không phải số lượng file.
+12. **Một lệnh chạy từ gốc:** tiếp tục `npm run dev`, `npm run db:init`, `npm run db:seed`, `npm test`, `npm start` (sửa script tương ứng trong quá trình chuyển đổi, không tạo hai bộ cài độc lập).
+
+## H. Bộ test cần có trước khi bảo vệ
+
+- Đăng nhập/đăng xuất/đổi mật khẩu; phiên hết hạn; khóa tài khoản; CSRF.
+- Phân quyền 4 vai trò: không chỉ ẩn UI, mà API không được trả hồ sơ/bảng điểm không có quyền.
+- Tạo/sửa/xóa khi hợp lệ theo khóa → ngành → chương trình → lớp; chặn trùng mã và xóa có ràng buộc FK.
+- Sinh viên đăng ký học phần: kiểm tra chỗ, lịch trùng, tiên quyết, rút học, lặp request, transaction.
+- Nhập/công bố điểm: trọng số 100%, điểm hợp lệ, thi lại/thi bù, không sửa trực tiếp kết quả đã công bố.
+- Chatbot: đếm lớp/sĩ số, tìm sinh viên, bảng điểm đúng quyền; prompt lạ không thể vượt quyền.
+- Không mất dữ liệu khi chạy chuyển đổi SQLite/MySQL; kiểm thử migration và demo seed không lặp.
+- Tính năng frontend gắn đúng endpoint V06; không còn request `/state` và `/changes` nếu đã loại bỏ.
+
+## I. Trình tự tái cấu trúc hợp lý
+
+**Giai đoạn 1:** Tách `core`, `config`, `middlewares`, giữ nguyên API đang chạy.
+
+**Giai đoạn 2:** Tách `auth`, `accounts`, `organization`, `students`, `teaching` theo trình tự phụ thuộc; thêm API tài nguyên và kiểm thử.
+
+**Giai đoạn 3:** Tách `enrollments`, `assessment`, `exams`, `requests`, `finance`, `reports`, `ai` mà không đổi quy tắc nghiệp vụ tùy tiện.
+
+**Giai đoạn 4:** Chuyển frontend từng màn hình sang API mới, giữ tương thích khi chuyển và test lại 4 vai trò.
+
+**Giai đoạn 5:** Dọn import, file cũ, routes cũ, dependencies không dùng; chạy test và viết README giải thích cho người bảo vệ.
+
+---
+
+**Chốt hướng:** Một repo JavaScript thuần; frontend và backend tách rõ; backend chia theo nghiệp vụ có lớp xử lý đủ để giải thích, không dùng kiến trúc cầu kỳ. Đây là bản cấu trúc hoàn chỉnh về phạm vi, **không đồng nghĩa tất cả tính năng đã được triển khai hoặc chạy ổn định**.

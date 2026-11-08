@@ -1,0 +1,4 @@
+import { statuses } from '../../../demo/data.js';
+import { icon, btn, heading } from '../../../components/ui.js';
+import { examsPanel, searchBar, filterSelect } from '../../_shared.js';
+export function exams(ctx) { return heading('TỔ CHỨC THI', 'Lịch thi & kết quả', ctx.user.role === 'academic' ? 'Soạn lịch thi nháp và đối chiếu các kỳ thi theo lớp.' : 'Theo dõi lịch thi đã công bố của các lớp liên quan.', ctx.user.role === 'academic' ? btn(icon('plus') + ' Tạo lịch thi', 'new-exam', 'primary') : '') + searchBar(ctx, 'Tìm kỳ thi, học phần hoặc phòng', filterSelect('status', 'Tất cả trạng thái', ['draft', 'published', 'completed', 'cancelled'].filter(k => ctx.user.role === 'academic' || k !== 'draft').map(id => ({ id, name: statuses[id] || id })), ctx.filters.status)) + examsPanel(ctx, ctx.user.role === 'student' ? ctx.user.profileId : undefined); }

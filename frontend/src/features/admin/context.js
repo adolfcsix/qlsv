@@ -1,0 +1,2 @@
+import { isOnline } from '../../services/repository.js';
+export function adminContext(context,resource){const ctx=context();if(ctx.user?.role!=='sysadmin')throw new Error('Chỉ quản trị được dùng chức năng này.');if(!isOnline())throw new Error('Chạy bản full-stack để quản lý dữ liệu thật.');const data=ctx[resource];if(data?.state!=='ready')throw new Error('Dữ liệu đang tải. Vui lòng thử lại sau.');return{ctx,data:data.data};}
