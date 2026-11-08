@@ -1,54 +1,60 @@
-# Chạy QLSV V06.13.1 với Gemini thật trên Windows / VS Code
+# Bắt đầu với Gemini trên Windows / VS Code — V06.21
 
-## 1. Chuẩn bị
+## 1. Mở đúng dự án
 
-- Node.js 22.13 hoặc mới hơn, VS Code, Internet và tài khoản Google để tạo Gemini API key.
-- Giải nén thư mục `QLSV_V06_13_1`, mở đúng thư mục này bằng **File > Open Folder** trong VS Code.
-- Mở **Terminal > New Terminal** rồi kiểm tra: `node -v`, `npm -v`.
-
-## 2. Cài thư viện và tạo Gemini API key
+Cài Node.js từ 22.13.0 trở lên. Giải nén ZIP hoặc clone repository, mở thư mục **có `package.json`** trong VS Code. Chọn **Terminal > New Terminal**:
 
 ```powershell
+node -v
+npm -v
 npm ci
 ```
 
-Truy cập https://aistudio.google.com/apikey, đăng nhập, chọn **Create API key** nếu cần và sao chép khóa.
+Chạy `npm run dev` nếu chỉ muốn thử web trước. Mở [http://localhost:5173](http://localhost:5173); mặc định SQLite có dữ liệu demo, không cần MySQL. Dừng bằng Ctrl+C trước khi cấu hình AI.
+
+## 2. Nhập key
+
+Tạo Gemini API key của bạn tại [Google AI Studio](https://aistudio.google.com/apikey). Trong Terminal gốc dự án:
 
 ```powershell
 npm run ai:setup
 ```
 
-Dán API key trong Terminal khi được hỏi, nhấn Enter. Các ký tự sẽ **không xuất hiện**; khóa được lưu trong `.env`, không được gửi cho người khác hay commit lên GitHub.
+Dán key rồi Enter; ký tự không hiện là bình thường. Script lưu key vào `.env` cạnh `package.json`, giữ cấu hình database và đặt các biến AI về Gemini mặc định. Không cần sửa code, không nhập key trên frontend hoặc gửi key qua chatbot.
 
-## 3. Xác nhận kết nối AI thật
+`AI_MODEL` mặc định trong mẫu là `gemini-2.5-flash`. Nếu tài khoản không hỗ trợ model này, sửa tên model được cấp và có tool calling trong `.env`. Để bật tìm kiếm web với Gemini, bảo đảm `AI_WEB_SEARCH=1`; model/quota phải hỗ trợ Google Search. Cấu hình khác xem [hướng dẫn tích hợp AI](HUONG_DAN_TICH_HOP_AI.md).
+
+## 3. Thử kết nối thật
 
 ```powershell
 npm run check:ai
 ```
 
-Khi thành công, Terminal thông báo `ĐẠT: Mô hình AI trả lời qua HTTP và chọn được công cụ tra cứu.` Lệnh này gửi yêu cầu thật tới mô hình Gemini, dùng dữ liệu GIẢ LẬP để kiểm tra việc gọi công cụ và diễn giải; không phải kiểm tra dữ liệu trường thực tế.
+Lệnh gửi hai yêu cầu thật tới mô hình: chọn công cụ lookup và diễn giải dữ liệu giả lập. **Đạt bước này chưa có nghĩa AI thao tác hoặc tìm kiếm web đã được kiểm tra.** Lỗi 401/403: kiểm tra key/quyền; 404: endpoint/model; 429: quota; timeout: mạng/model. Không đưa key vào ảnh chụp lỗi.
 
-Nếu lỗi 401/403: kiểm tra khóa và quyền truy cập; 404: model/endpoint; 429: quota; lỗi mạng/timeout: kiểm tra Internet. Model mặc định `gemini-2.5-flash`; có thể cập nhật `AI_MODEL` trong `.env` nếu model không còn được hỗ trợ trong tài khoản.
-
-## 4. Khởi động web Local
+## 4. Mở chatbot và thử ba chức năng
 
 ```powershell
 npm run dev
 ```
 
-Mở http://localhost:5173. Mặc định dự án dùng SQLite và dữ liệu mẫu; không cần cài MySQL chỉ để kiểm tra AI. Dữ liệu demo có bốn tài khoản: `quantri`, `cb001`, `gv001`, `20240001`; mật khẩu demo mặc định `Hocvu@2026`. **Chỉ dùng cho môi trường thực hành Local.**
+Mở web, đăng nhập `cb001` với mật khẩu demo **`Hocvu@2026`**. Các tài khoản demo khác: `quantri`, `gv001`, `20240001`.
 
-Đăng nhập `cb001`, mở chatbot, bấm **Kiểm tra AI thật** rồi đặt câu hỏi: `Khóa K24 có bao nhiêu lớp hành chính?`. Câu trả lời có nhãn **AI diễn giải** chỉ khi mô hình thật xử lý và backend truy vấn dữ liệu theo quyền. Nội dung được lấy từ dữ liệu mẫu và có thể thay đổi.
+1. **Tra cứu:** mở chatbot, dùng nút kiểm tra AI thật rồi hỏi “Khóa K24 có bao nhiêu lớp hành chính?”. Kiểm tra nhãn AI diễn giải và dữ liệu được phép xem.
+2. **AI thao tác:** trên DB demo, nói “Thêm khóa K30, tên Khóa tuyển sinh 2030”, chọn mã chưa tồn tại. Trả lời trường còn thiếu, kiểm tra bản xem trước, thử Hủy. Khi muốn ghi thật, chuẩn bị lại rồi bấm Xác nhận và kiểm tra danh mục. Gõ “đồng ý” không tự ghi.
+3. **Hỏi ngoài lề:** hỏi thông tin ngoài hệ thống cần nguồn. Chỉ coi đã có tìm kiếm web khi provider thực sự trả nguồn trong câu trả lời. Nếu không có nguồn, không suy diễn rằng tìm kiếm đã chạy thành công.
 
-## 5. Kiểm tra và thoát
+Sinh viên có thể nhờ AI gửi đăng ký lớp học phần đang mở; sau xác nhận vẫn chờ cán bộ duyệt. Mọi thao tác vẫn bị giới hạn bởi quyền, điều kiện đăng ký, sĩ số và lịch. Xem [36 tác vụ và giới hạn](TRO_LY_THAO_TAC_V06_21.md).
 
-Mở một Terminal khác, chạy:
+## 5. Kiểm tra local, dừng và chạy lại
+
+Mở Terminal khác ở gốc dự án:
 
 ```powershell
 npm run check:local
 npm test
 ```
 
-`check:local` kiểm tra Local, KHÔNG thay thế `check:ai`. Dừng web bằng Ctrl+C trong Terminal đang chạy `npm run dev`.
+Hai lệnh này không thay thế kiểm tra provider thật. V06.21 đã thử giao thức provider bằng HTTP giả lập, chưa được xác nhận bằng key Gemini thật trong môi trường kiểm tra của dự án; ba bước ở mục 4 là phần bạn cần thử với key của mình.
 
-**Ghi chú:** `AI_REQUIRE_LIVE=1` đã cấu hình sẵn, do đó khi thiếu key hoặc AI bị gián đoạn, chatbot báo lỗi thay vì giả vờ đã gọi Gemini. Key được giữ server-side; không đưa dữ liệu cá nhân thật vào cơ sở dữ liệu demo hoặc gửi hồ sơ sinh viên thật lên API nếu chưa được phép.
+Dừng web bằng Ctrl+C. Lần sau chỉ cần `npm run dev`; không phải nhập key hoặc `npm ci` lại nếu cấu hình và dependencies chưa đổi. Mỗi lần chỉnh `.env` phải khởi động lại server. Dữ liệu SQLite vẫn lưu trong `backend/data/`; xem [sao lưu và nâng cấp](../README.md#sao-lưu-và-nâng-cấp) trước khi thay bản code.
